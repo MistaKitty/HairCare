@@ -11,13 +11,13 @@ const serviceSchema = new mongoose.Schema({
     number: { type: String },
     floor: { type: String },
     county: { type: String },
-    parish: { type: String }, // Municipality or district
-    locality: { type: String }, // Locality
-    postalDesignation: { type: String }, // Postal designation
-    street: { type: String }, // Street or road
+    parish: { type: String },
+    locality: { type: String },
+    postalDesignation: { type: String },
+    street: { type: String },
     local: { type: String },
     coordinates: {
-      type: [Number], // [latitude, longitude]
+      type: [String],
     },
   },
   travelFee: { type: Number },
