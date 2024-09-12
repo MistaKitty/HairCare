@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const { parsePhoneNumberFromString } = require("libphonenumber-js");
 
 const clientSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -9,10 +10,31 @@ const clientSchema = new mongoose.Schema({
     unique: true,
     match: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
   },
-  phone: {
-    type: String,
+  phonePrefix: {
+    type: Number,
     required: true,
-    match: /^(\+\d{1,3}[- ]?)?\d{10}$/,
+    validate: {
+      validator: function (value) {
+        return /^\d{1,3}$/.test(value);
+      },
+      message: "Invalid phone prefix format",
+    },
+  },
+  phoneNumber: {
+    type: Number,
+    required: true,
+    validate: {
+      validator: function (value) {
+        return /^\d{6,10}$/.test(value);
+      },
+      message: "Invalid phone number format",
+    },
+  },
+  formattedPhone: {
+    type: String,
+  },
+  country: {
+    type: String,
   },
   password: {
     type: String,
@@ -25,11 +47,24 @@ const clientSchema = new mongoose.Schema({
 clientSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(15);
     this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
     next(error);
+  }
+});
+
+clientSchema.pre("save", function (next) {
+  const phone = `+${this.phonePrefix}${this.phoneNumber}`;
+  const parsedPhoneNumber = parsePhoneNumberFromString(phone);
+
+  if (parsedPhoneNumber && parsedPhoneNumber.isValid()) {
+    this.formattedPhone = parsedPhoneNumber.formatInternational();
+    this.country = parsedPhoneNumber.country;
+    next();
+  } else {
+    next(new Error("Invalid phone number"));
   }
 });
 

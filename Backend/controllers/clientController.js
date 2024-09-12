@@ -1,6 +1,5 @@
 const Client = require("../models/Client");
 
-// Function to get all clients
 exports.getAllClients = async (req, res) => {
   try {
     const clients = await Client.find();
@@ -10,11 +9,10 @@ exports.getAllClients = async (req, res) => {
   }
 };
 
-// Client modifications
 exports.createClient = async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  const { name, email, phonePrefix, phoneNumber, password } = req.body;
 
-  if (!name || !email || !phone || !password) {
+  if (!name || !email || !phonePrefix || !phoneNumber || !password) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
@@ -22,7 +20,8 @@ exports.createClient = async (req, res) => {
     const client = new Client({
       name: name,
       email: email,
-      phone: phone,
+      phonePrefix: phonePrefix,
+      phoneNumber: phoneNumber,
       password: password,
     });
 
@@ -34,10 +33,19 @@ exports.createClient = async (req, res) => {
 };
 
 exports.updateClient = async (req, res) => {
+  const { phonePrefix, phoneNumber, ...rest } = req.body;
+  let phoneDetails = {};
+
+  if (phonePrefix && phoneNumber) {
+    phoneDetails = { phonePrefix, phoneNumber };
+  }
+
   try {
-    const client = await Client.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const client = await Client.findByIdAndUpdate(
+      req.params.id,
+      { ...rest, ...phoneDetails },
+      { new: true }
+    );
     if (!client) return res.status(404).json({ message: "Client not found" });
     res.json(client);
   } catch (err) {
@@ -54,5 +62,3 @@ exports.deleteClient = async (req, res) => {
     res.status(400).json({ message: "Bad Request" });
   }
 };
-
-// Add other functions as needed
