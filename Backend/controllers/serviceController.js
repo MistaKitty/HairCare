@@ -13,78 +13,27 @@ exports.getAllServices = async (req, res) => {
 };
 
 exports.createService = async (req, res) => {
-  const {
-    location: { postalCodePrefix, postalCodeSuffix, number, floor },
-    ...serviceData
-  } = req.body;
+  const { hairLength, ...serviceData } = req.body;
 
   console.log("Request Body:", req.body);
 
-  const postalCodePrefixRegex = /^[0-9]{4}$/;
-  const postalCodeSuffixRegex = /^[0-9]{3}$/;
-
-  if (
-    !postalCodePrefix ||
-    !postalCodeSuffix ||
-    !postalCodePrefixRegex.test(postalCodePrefix) ||
-    !postalCodeSuffixRegex.test(postalCodeSuffix)
-  ) {
+  if (!["Short", "Medium", "Long", "Extra Long"].includes(hairLength)) {
     return res.status(400).json({
       message:
-        "Invalid postal code format. Expected format is 0000 for prefix and 000 for suffix",
+        "Invalid hair length. Must be one of: Short, Medium, Long, Extra Long",
     });
   }
 
-  const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
-  console.log(postalCode);
-
-  const apiKey = process.env.POSTAL_CODE_API_KEY;
-
   try {
-    const response = await axios.get(
-      `https://www.cttcodigopostal.pt/api/v1/${apiKey}/${postalCode}`
-    );
-
-    console.log("API Response:", response.data);
-
-    const data = response.data[0];
-
-    if (!data) {
-      return res
-        .status(400)
-        .json({ message: "No valid results found for the postal code" });
-    }
-
-    const county = data.concelho;
-    const locality = data.localidade;
-    const parish = data.freguesia;
-    const postalDesignation = data["codigo-postal"];
-    const street = data.morada;
-    const local = data["info-local"];
-    const coordinates = [data.latitude, data.longitude];
-    console.log(coordinates);
-
     const service = new Service({
       ...serviceData,
-      location: {
-        postalCodePrefix,
-        postalCodeSuffix,
-        coordinates,
-        number,
-        floor,
-        county,
-        locality,
-        parish,
-        postalDesignation,
-        street,
-        local,
-      },
+      hairLength,
     });
 
     await service.save();
     res.status(201).json(service);
   } catch (error) {
-    console.error("Error creating service:", error.message); // Adicione um log de erro para depuração
+    console.error("Error creating service:", error.message);
     res
       .status(400)
       .json({ message: "Error creating service", error: error.message });
@@ -92,8 +41,20 @@ exports.createService = async (req, res) => {
 };
 
 exports.updateService = async (req, res) => {
+  const { hairLength, ...updateData } = req.body;
+
+  if (
+    hairLength &&
+    !["Short", "Medium", "Long", "Extra Long"].includes(hairLength)
+  ) {
+    return res.status(400).json({
+      message:
+        "Invalid hair length. Must be one of: Short, Medium, Long, Extra Long",
+    });
+  }
+
   try {
-    const service = await Service.findByIdAndUpdate(req.params.id, req.body, {
+    const service = await Service.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
     });
     if (!service) return res.status(404).json({ message: "Service not found" });

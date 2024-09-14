@@ -45,26 +45,27 @@ const clientSchema = new mongoose.Schema({
 });
 
 clientSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
   try {
-    const salt = await bcrypt.genSalt(15);
-    this.password = await bcrypt.hash(this.password, salt);
+    // Hash da password, se for modificada
+    if (this.isModified("password")) {
+      const salt = await bcrypt.genSalt(15);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+
+    // Formatar o número de telefone
+    const phone = `+${this.phonePrefix}${this.phoneNumber}`;
+    const parsedPhoneNumber = parsePhoneNumberFromString(phone);
+
+    if (parsedPhoneNumber && parsedPhoneNumber.isValid()) {
+      this.formattedPhone = parsedPhoneNumber.formatInternational();
+      this.country = parsedPhoneNumber.country;
+    } else {
+      return next(new Error("Invalid phone number"));
+    }
+
     next();
   } catch (error) {
     next(error);
-  }
-});
-
-clientSchema.pre("save", function (next) {
-  const phone = `+${this.phonePrefix}${this.phoneNumber}`;
-  const parsedPhoneNumber = parsePhoneNumberFromString(phone);
-
-  if (parsedPhoneNumber && parsedPhoneNumber.isValid()) {
-    this.formattedPhone = parsedPhoneNumber.formatInternational();
-    this.country = parsedPhoneNumber.country;
-    next();
-  } else {
-    next(new Error("Invalid phone number"));
   }
 });
 

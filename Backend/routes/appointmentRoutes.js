@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const appointmentController = require("../controllers/appointmentController"); 
+const appointmentController = require("../controllers/appointmentController");
 
 router.get("/", appointmentController.getAllAppointments);
-router.post("/", appointmentController.createAppointment); 
+router.post("/", appointmentController.createAppointment);
 router.put("/:id", appointmentController.updateAppointment);
 router.delete("/:id", appointmentController.deleteAppointment);
 

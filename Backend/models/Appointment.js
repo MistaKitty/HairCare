@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema({
-  date: { type: Date, required: true },
-  time: { type: String, required: true },
   client: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Client",
@@ -13,18 +11,28 @@ const appointmentSchema = new mongoose.Schema({
     ref: "Service",
     required: true,
   },
-  duration: { type: Number },
-  status: {
-    type: String,
-    enum: ["confirmed", "pending", "cancelled"],
-    default: "pending",
+  date: {
+    day: { type: Number, required: true },
+    month: { type: Number, required: true },
+    hour: { type: Number, required: true },
+    minute: { type: Number, required: true },
   },
   location: {
-    street: { type: String },
-    postalCode: { type: String, required: true },
-    number: { type: String },
+    postalCodePrefix: { type: String, required: true },
+    postalCodeSuffix: { type: String, required: true },
+    number: { type: String, required: true },
     floor: { type: String },
+    street: { type: String },
+    locality: { type: String },
+    parish: { type: String },
+    county: { type: String },
+    coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
+    localInfo: { type: String },
   },
+  notes: { type: String },
 });
 
 module.exports = mongoose.model("Appointment", appointmentSchema);
