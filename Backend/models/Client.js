@@ -46,13 +46,12 @@ const clientSchema = new mongoose.Schema({
 
 clientSchema.pre("save", async function (next) {
   try {
-    // Hash da password, se for modificada
+
     if (this.isModified("password")) {
       const salt = await bcrypt.genSalt(15);
       this.password = await bcrypt.hash(this.password, salt);
     }
 
-    // Formatar o número de telefone
     const phone = `+${this.phonePrefix}${this.phoneNumber}`;
     const parsedPhoneNumber = parsePhoneNumberFromString(phone);
 

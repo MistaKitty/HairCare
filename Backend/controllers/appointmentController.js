@@ -2,11 +2,24 @@ const Client = require("../models/Client");
 const Appointment = require("../models/Appointment");
 const Service = require("../models/Service");
 const axios = require("axios");
+const dayjs = require("dayjs");
 
 exports.getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find().populate("service");
-    res.json(appointments);
+
+    const formattedAppointments = appointments.map((appointment) => {
+      const formattedDate = dayjs(appointment.date).format(
+        "MMMM D, YYYY h:mm A"
+      );
+
+      return {
+        ...appointment.toObject(),
+        formattedDate,
+      };
+    });
+
+    res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
@@ -17,6 +30,8 @@ exports.createAppointment = async (req, res) => {
     client,
     location: { postalCodePrefix, postalCodeSuffix, number, floor },
     serviceId,
+    status = "pendente",
+    reason,
     ...appointmentData
   } = req.body;
 
@@ -66,6 +81,8 @@ exports.createAppointment = async (req, res) => {
       ...appointmentData,
       client,
       service: serviceId,
+      status,
+      reason,
       location: {
         postalCodePrefix,
         postalCodeSuffix,
@@ -100,13 +117,16 @@ exports.createAppointment = async (req, res) => {
 
 exports.updateAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!appointment)
+    const { id } = req.params;
+    const updates = req.body;
+    const appointment = await Appointment.findByIdAndUpdate(id, updates, {
+      new: true,
+    });
+
+    if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
+    }
+
     res.json(appointment);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
@@ -115,9 +135,17 @@ exports.updateAppointment = async (req, res) => {
 
 exports.deleteAppointment = async (req, res) => {
   try {
-    const appointment = await Appointment.findByIdAndDelete(req.params.id);
-    if (!appointment)
+    const { id } = req.params;
+    const appointment = await Appointment.findByIdAndDelete(id);
+
+    if (!appointment) {
       return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    await Client.findByIdAndUpdate(appointment.client, {
+      $pull: { appointments: id },
+    });
+
     res.json({ message: "Appointment deleted" });
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
