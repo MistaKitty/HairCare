@@ -41,7 +41,7 @@ const clientSchema = new mongoose.Schema({
     required: true,
     minlength: 6,
   },
-  appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Appointment" }],
+  appointments: [{ type: mongoose.Schema.Types.ObjectId,ref: "Appointment" }],
 });
 
 clientSchema.pre("save", async function (next) {
