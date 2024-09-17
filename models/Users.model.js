@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const { parsePhoneNumberFromString } = require("libphonenumber-js");
 
-const clientSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: {
     type: String,
@@ -44,7 +44,7 @@ const clientSchema = new mongoose.Schema({
   appointments: [{ type: mongoose.Schema.Types.ObjectId,ref: "Appointment" }],
 });
 
-clientSchema.pre("save", async function (next) {
+userSchema.pre("save", async function (next) {
   try {
 
     if (this.isModified("password")) {
@@ -68,8 +68,8 @@ clientSchema.pre("save", async function (next) {
   }
 });
 
-clientSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model("Client", clientSchema);
+module.exports = mongoose.model("Users.model", userSchema);

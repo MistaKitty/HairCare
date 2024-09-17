@@ -1,6 +1,6 @@
-const Client = require("../models/Client");
-const Appointment = require("../models/Appointment");
-const Service = require("../models/Service");
+const User = require("../models/Users.model");
+const Appointment = require("../models/Appointment.model");
+const Service = require("../models/Service.model");
 const axios = require("axios");
 const dayjs = require("dayjs");
 
@@ -27,7 +27,7 @@ exports.getAllAppointments = async (req, res) => {
 
 exports.createAppointment = async (req, res) => {
   const {
-    client,
+    user,
     location: { postalCodePrefix, postalCodeSuffix, number, floor },
     serviceId,
     status = "pendente",
@@ -35,7 +35,7 @@ exports.createAppointment = async (req, res) => {
     ...appointmentData
   } = req.body;
 
-  if (!client || !serviceId || !postalCodePrefix || !postalCodeSuffix) {
+  if (!user || !serviceId || !postalCodePrefix || !postalCodeSuffix) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -56,9 +56,9 @@ exports.createAppointment = async (req, res) => {
   const apiKey = process.env.POSTAL_CODE_API_KEY;
 
   try {
-    const existingClient = await Client.findById(client);
-    if (!existingClient) {
-      return res.status(404).json({ message: "Client not found" });
+    const existingUser = await User.findById(user);
+    if (!existingUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
     const service = await Service.findById(serviceId);
@@ -79,7 +79,7 @@ exports.createAppointment = async (req, res) => {
 
     const appointment = new Appointment({
       ...appointmentData,
-      client,
+      user,
       service: serviceId,
       status,
       reason,
@@ -102,7 +102,7 @@ exports.createAppointment = async (req, res) => {
 
     await appointment.save();
 
-    await Client.findByIdAndUpdate(client, {
+    await User.findByIdAndUpdate(user, {
       $push: { appointments: appointment._id },
     });
 
@@ -142,7 +142,7 @@ exports.deleteAppointment = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    await Client.findByIdAndUpdate(appointment.client, {
+    await User.findByIdAndUpdate(appointment.user, {
       $pull: { appointments: id },
     });
 

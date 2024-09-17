@@ -1,15 +1,15 @@
-const Client = require("../models/Client");
+const User = require("../models/Users.model");
 
-exports.getAllClients = async (req, res) => {
+exports.getAllUsers = async (req, res) => {
   try {
-    const clients = await Client.find();
-    res.json(clients);
+    const users = await User.find();
+    res.json(users);
   } catch (err) {
     res.status(500).json({ message: "Server Error" });
   }
 };
 
-exports.createClient = async (req, res) => {
+exports.createUser = async (req, res) => {
   const { name, email, phonePrefix, phoneNumber, password } = req.body;
 
   if (!name || !email || !phonePrefix || !phoneNumber || !password) {
@@ -17,7 +17,7 @@ exports.createClient = async (req, res) => {
   }
 
   try {
-    const client = new Client({
+    const user = new User({
       name: name,
       email: email,
       phonePrefix: phonePrefix,
@@ -25,14 +25,14 @@ exports.createClient = async (req, res) => {
       password: password,
     });
 
-    const newClient = await client.save();
-    res.status(201).json(newClient);
+    const newUser = await user.save();
+    res.status(201).json(newUser);
   } catch (err) {
     res.status(400).json({ message: "Bad Request", error: err.message });
   }
 };
 
-exports.updateClient = async (req, res) => {
+exports.updateUser = async (req, res) => {
   const { phonePrefix, phoneNumber, ...rest } = req.body;
   let phoneDetails = {};
 
@@ -41,23 +41,23 @@ exports.updateClient = async (req, res) => {
   }
 
   try {
-    const client = await Client.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
       req.params.id,
       { ...rest, ...phoneDetails },
       { new: true }
     );
-    if (!client) return res.status(404).json({ message: "Client not found" });
-    res.json(client);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
   } catch (err) {
     res.status(400).json({ message: "Bad Request" });
   }
 };
 
-exports.deleteClient = async (req, res) => {
+exports.deleteUser = async (req, res) => {
   try {
-    const client = await Client.findByIdAndDelete(req.params.id);
-    if (!client) return res.status(404).json({ message: "Client not found" });
-    res.json({ message: "Client deleted" });
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ message: "User deleted" });
   } catch (err) {
     res.status(400).json({ message: "Bad Request" });
   }
