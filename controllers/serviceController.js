@@ -1,6 +1,6 @@
 require("dotenv").config();
 const axios = require("axios");
-const Service = require("../models/Service");
+const Service = require("../models/Service.model");
 
 exports.getAllServices = async (req, res) => {
   try {

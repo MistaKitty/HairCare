@@ -7,18 +7,15 @@ const dayjs = require("dayjs");
 exports.getAllAppointments = async (req, res) => {
   try {
     const appointments = await Appointment.find().populate("service");
-
     const formattedAppointments = appointments.map((appointment) => {
       const formattedDate = dayjs(appointment.date).format(
         "MMMM D, YYYY h:mm A"
       );
-
       return {
         ...appointment.toObject(),
         formattedDate,
       };
     });
-
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
@@ -30,8 +27,9 @@ exports.createAppointment = async (req, res) => {
     user,
     location: { postalCodePrefix, postalCodeSuffix, number, floor },
     serviceId,
-    status = "pendente",
+    status = "pending",
     reason,
+    description,
     ...appointmentData
   } = req.body;
 
@@ -83,6 +81,7 @@ exports.createAppointment = async (req, res) => {
       service: serviceId,
       status,
       reason,
+      description,
       location: {
         postalCodePrefix,
         postalCodeSuffix,
@@ -101,7 +100,6 @@ exports.createAppointment = async (req, res) => {
     });
 
     await appointment.save();
-
     await User.findByIdAndUpdate(user, {
       $push: { appointments: appointment._id },
     });
@@ -119,6 +117,16 @@ exports.updateAppointment = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    if (
+      updates.status &&
+      !["pending", "canceled", "rescheduled", "confirmed"].includes(
+        updates.status
+      )
+    ) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
     const appointment = await Appointment.findByIdAndUpdate(id, updates, {
       new: true,
     });
