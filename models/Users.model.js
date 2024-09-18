@@ -41,12 +41,16 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 6,
   },
-  appointments: [{ type: mongoose.Schema.Types.ObjectId,ref: "Appointment" }],
+  role: {
+    type: String,
+    enum: ["client", "admin", "worker"],
+    default: "client",
+  },
+  appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Appointment" }],
 });
 
 userSchema.pre("save", async function (next) {
   try {
-
     if (this.isModified("password")) {
       const salt = await bcrypt.genSalt(15);
       this.password = await bcrypt.hash(this.password, salt);

@@ -10,7 +10,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  const { name, email, phonePrefix, phoneNumber, password } = req.body;
+  const { name, email, phonePrefix, phoneNumber, password, role } = req.body;
 
   if (!name || !email || !phonePrefix || !phoneNumber || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -18,11 +18,12 @@ exports.createUser = async (req, res) => {
 
   try {
     const user = new User({
-      name: name,
-      email: email,
-      phonePrefix: phonePrefix,
-      phoneNumber: phoneNumber,
-      password: password,
+      name,
+      email,
+      phonePrefix,
+      phoneNumber,
+      password,
+      role: role || "client",
     });
 
     const newUser = await user.save();
@@ -33,23 +34,25 @@ exports.createUser = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const { phonePrefix, phoneNumber, ...rest } = req.body;
-  let phoneDetails = {};
+  const { phonePrefix, phoneNumber, role, ...rest } = req.body;
+  let updateData = { ...rest };
 
   if (phonePrefix && phoneNumber) {
-    phoneDetails = { phonePrefix, phoneNumber };
+    updateData = { ...updateData, phonePrefix, phoneNumber };
+  }
+
+  if (role) {
+    updateData.role = role;
   }
 
   try {
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { ...rest, ...phoneDetails },
-      { new: true }
-    );
+    const user = await User.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+    });
     if (!user) return res.status(404).json({ message: "User not found" });
     res.json(user);
   } catch (err) {
-    res.status(400).json({ message: "Bad Request" });
+    res.status(400).json({ message: "Bad Request", error: err.message });
   }
 };
 

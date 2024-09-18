@@ -24,7 +24,6 @@ exports.getAllAppointments = async (req, res) => {
 
 exports.createAppointment = async (req, res) => {
   const {
-    user,
     location: { postalCodePrefix, postalCodeSuffix, number, floor },
     serviceId,
     status = "pending",
@@ -33,7 +32,9 @@ exports.createAppointment = async (req, res) => {
     ...appointmentData
   } = req.body;
 
-  if (!user || !serviceId || !postalCodePrefix || !postalCodeSuffix) {
+  const user = req.user._id;
+
+  if (!serviceId || !postalCodePrefix || !postalCodeSuffix) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -54,11 +55,6 @@ exports.createAppointment = async (req, res) => {
   const apiKey = process.env.POSTAL_CODE_API_KEY;
 
   try {
-    const existingUser = await User.findById(user);
-    if (!existingUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
     const service = await Service.findById(serviceId);
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
