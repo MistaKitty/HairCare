@@ -1,4 +1,4 @@
-const User = require("../models/Users.model");
+const User = require("../models/User.model");
 const Appointment = require("../models/Appointment.model");
 const Service = require("../models/Service.model");
 const axios = require("axios");
@@ -25,16 +25,17 @@ exports.getAllAppointments = async (req, res) => {
 exports.createAppointment = async (req, res) => {
   const {
     location: { postalCodePrefix, postalCodeSuffix, number, floor },
-    serviceId,
+    service,
     status = "pending",
     reason,
+    date,
     description,
     ...appointmentData
   } = req.body;
 
   const user = req.user._id;
 
-  if (!serviceId || !postalCodePrefix || !postalCodeSuffix) {
+  if (!service || !postalCodePrefix || !postalCodeSuffix) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -55,8 +56,8 @@ exports.createAppointment = async (req, res) => {
   const apiKey = process.env.POSTAL_CODE_API_KEY;
 
   try {
-    const service = await Service.findById(serviceId);
-    if (!service) {
+    const newService = await Service.findById(service);
+    if (!newService) {
       return res.status(404).json({ message: "Service not found" });
     }
 
@@ -74,7 +75,8 @@ exports.createAppointment = async (req, res) => {
     const appointment = new Appointment({
       ...appointmentData,
       user,
-      service: serviceId,
+      service,
+      date,
       status,
       reason,
       description,

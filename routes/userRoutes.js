@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/UsersController");
+const userController = require("../controllers/UserController");
 const {
   authMiddleware,
   authorizeRoles,
@@ -9,7 +9,7 @@ const {
 router.get(
   "/",
   authMiddleware,
-  authorizeRoles("admin", "worker"),
+  authorizeRoles("admin", "worker", "client"),
   userController.getAllUsers
 );
 router.post("/", userController.createUser);

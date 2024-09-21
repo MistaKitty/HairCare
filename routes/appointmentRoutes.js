@@ -13,7 +13,12 @@ router.get(
   appointmentController.getAllAppointments
 );
 
-router.post("/", authMiddleware, appointmentController.createAppointment);
+router.post(
+  "/",
+  authMiddleware,
+  authorizeRoles("admin", "worker", "client"),
+  appointmentController.createAppointment
+);
 
 router.put(
   "/:id",
