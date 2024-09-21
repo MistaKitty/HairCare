@@ -24,19 +24,27 @@ exports.getAllAppointments = async (req, res) => {
 
 exports.createAppointment = async (req, res) => {
   const {
-    location: { postalCodePrefix, postalCodeSuffix, number, floor },
-    service,
-    status = "pending",
-    reason,
+    location,
+    services,
     date,
     description,
-    ...appointmentData
+    fee,
+    total,
+    travelDuration,
+    distance,
+    servicePrice,
+    serviceDuration,
   } = req.body;
 
+  if (!location || !services || !date) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const { postalCodePrefix, postalCodeSuffix, number, floor } = location;
   const user = req.user._id;
 
-  if (!service || !postalCodePrefix || !postalCodeSuffix) {
-    return res.status(400).json({ message: "Missing required fields" });
+  if (!postalCodePrefix || !postalCodeSuffix) {
+    return res.status(400).json({ message: "Missing postal code information" });
   }
 
   const postalCodePrefixRegex = /^[0-9]{4}$/;
@@ -56,10 +64,15 @@ exports.createAppointment = async (req, res) => {
   const apiKey = process.env.POSTAL_CODE_API_KEY;
 
   try {
-    const newService = await Service.findById(service);
-    if (!newService) {
-      return res.status(404).json({ message: "Service not found" });
+    const servicesData = await Service.find({ _id: { $in: services } });
+    if (!servicesData || servicesData.length === 0) {
+      return res.status(404).json({ message: "No services found" });
     }
+
+    const totalServiceDuration = servicesData.reduce(
+      (acc, service) => acc + service.duration,
+      0
+    );
 
     const response = await axios.get(
       `https://www.cttcodigopostal.pt/api/v1/${apiKey}/${postalCode}`
@@ -72,28 +85,77 @@ exports.createAppointment = async (req, res) => {
         .json({ message: "No valid results found for the postal code" });
     }
 
+    const coordinates = {
+      latitude: parseFloat(data.latitude),
+      longitude: parseFloat(data.longitude),
+    };
+
+    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${process.env.START_LATITUDE},${process.env.START_LONGITUDE}&destinations=${coordinates.latitude},${coordinates.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+
+    const googleResponse = await axios.get(googleMapsApiUrl);
+    const distanceData = googleResponse.data.rows[0].elements[0];
+
+    if (!distanceData || distanceData.status !== "OK") {
+      throw new Error("Failed to get distance data");
+    }
+
+    const distance = (distanceData.distance.value / 1000).toFixed(2);
+    const travelDurationSeconds = distanceData.duration.value;
+    const hours = Math.floor(travelDurationSeconds / 3600);
+    const minutes = Math.floor((travelDurationSeconds % 3600) / 60);
+    const travelDurationFormatted = `${hours}h${String(minutes).padStart(
+      2,
+      "0"
+    )}`;
+
+    const pricePerKm = parseFloat(process.env.PRICE_PER_KM);
+    const baseFee = parseFloat(process.env.BASE_FEE);
+    const feeCalculated = (distance * pricePerKm + baseFee).toFixed(2);
+
+    const serviceHours = Math.floor(totalServiceDuration / 3600);
+    const serviceMinutes = Math.floor((totalServiceDuration % 3600) / 60);
+    const serviceDurationFormatted = `${serviceHours}h${String(
+      serviceMinutes
+    ).padStart(2, "0")}`;
+
     const appointment = new Appointment({
-      ...appointmentData,
       user,
-      service,
-      date,
-      status,
-      reason,
-      description,
-      location: {
-        postalCodePrefix,
-        postalCodeSuffix,
-        number,
-        floor,
-        street: data.morada,
-        locality: data.localidade,
-        parish: data.freguesia,
-        county: data.concelho,
-        coordinates: {
-          latitude: parseFloat(data.latitude),
-          longitude: parseFloat(data.longitude),
+      appointment: {
+        services: servicesData.map((service) => ({
+          serviceId: service._id,
+          serviceName: service.treatments,
+          duration: Math.floor(service.duration / 60),
+        })),
+        date,
+        status: "pending",
+        location: {
+          postalCodePrefix,
+          postalCodeSuffix,
+          number,
+          floor,
+          street: data.morada,
+          locality: data.localidade,
+          parish: data.freguesia,
+          county: data.concelho,
+          coordinates,
+          localInfo: data["info-local"],
         },
-        localInfo: data["info-local"],
+        description,
+      },
+      billing: {
+        fee: `€${feeCalculated}`,
+        total: `€${(
+          parseFloat(feeCalculated) +
+          servicesData.reduce((acc, service) => acc + service.price, 0)
+        ).toFixed(2)}`,
+        servicePrice: `€${servicesData
+          .reduce((acc, service) => acc + service.price, 0)
+          .toFixed(2)}`,
+        serviceDuration: serviceDurationFormatted,
+      },
+      travel: {
+        travelDuration: travelDurationFormatted,
+        distance: `${distance} km`,
       },
     });
 
