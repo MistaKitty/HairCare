@@ -61,7 +61,7 @@ exports.createAppointment = async (req, res) => {
   }
 
   const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
-  const apiKey = process.env.POSTAL_CODE_API_KEY;
+  const cttApiKey = process.env.POSTAL_CODE_API_KEY;
 
   try {
     const servicesData = await Service.find({ _id: { $in: services } });
@@ -75,7 +75,7 @@ exports.createAppointment = async (req, res) => {
     );
 
     const response = await axios.get(
-      `https://www.cttcodigopostal.pt/api/v1/${apiKey}/${postalCode}`
+      `https://www.cttcodigopostal.pt/api/v1/${cttApiKey}/${postalCode}`
     );
 
     const data = response.data[0];
@@ -90,7 +90,11 @@ exports.createAppointment = async (req, res) => {
       longitude: parseFloat(data.longitude),
     };
 
-    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${process.env.START_LATITUDE},${process.env.START_LONGITUDE}&destinations=${coordinates.latitude},${coordinates.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    const mapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const startCoordinates = `${process.env.START_LATITUDE},${process.env.START_LONGITUDE}`;
+    const endCoordinates = `${coordinates.latitude},${coordinates.longitude}`;
+
+    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
 
     const googleResponse = await axios.get(googleMapsApiUrl);
     const distanceData = googleResponse.data.rows[0].elements[0];
