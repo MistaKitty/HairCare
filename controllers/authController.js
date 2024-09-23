@@ -2,6 +2,8 @@ const User = require("../models/User.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
+let invalidTokens = [];
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -11,8 +13,8 @@ exports.login = async (req, res) => {
 
   try {
     const userEmail = email.toLowerCase();
-
     const user = await User.findOne({ email: userEmail });
+
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -31,8 +33,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
-
-let invalidTokens = [];
 
 exports.logout = (req, res) => {
   const token = req.headers["authorization"]?.split(" ")[1];
