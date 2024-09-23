@@ -1,4 +1,5 @@
 const User = require("../models/User.model");
+const { sendWelcomeEmail } = require("../controllers/emailController");
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -27,6 +28,9 @@ exports.createUser = async (req, res) => {
     });
 
     const newUser = await user.save();
+
+    await sendWelcomeEmail(email, name);
+
     res.status(201).json(newUser);
   } catch (err) {
     res.status(400).json({ message: "Bad Request", error: err.message });

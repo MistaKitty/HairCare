@@ -15,12 +15,7 @@ exports.login = async (req, res) => {
     const userEmail = email.toLowerCase();
     const user = await User.findOne({ email: userEmail });
 
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
@@ -42,7 +37,6 @@ exports.logout = (req, res) => {
   }
 
   invalidTokens.push(token);
-  console.log("Logged out token:", token);
   res.json({ message: "Logged out successfully" });
 };
 
@@ -57,7 +51,9 @@ exports.verifyToken = (req, res, next) => {
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.error("Token verification error:", err);
-      return res.status(401).json({ message: "Unauthorized" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized - Token expired or invalid" });
     }
     req.userId = decoded.id;
     next();
