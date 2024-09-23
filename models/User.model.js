@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
   },
   formattedPhone: {
     type: String,
+    unique: true,
   },
   country: {
     type: String,

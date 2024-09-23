@@ -9,7 +9,7 @@ exports.getAllAppointments = async (req, res) => {
     const appointments = await Appointment.find().populate("service");
     const formattedAppointments = appointments.map((appointment) => {
       const formattedDate = dayjs(appointment.date).format(
-        "MMMM D, YYYY h:mm A"
+        "D MMMM, YYYY h:mm A"
       );
       return {
         ...appointment.toObject(),
@@ -23,18 +23,7 @@ exports.getAllAppointments = async (req, res) => {
 };
 
 exports.createAppointment = async (req, res) => {
-  const {
-    location,
-    services,
-    date,
-    description,
-    fee,
-    total,
-    travelDuration,
-    distance,
-    servicePrice,
-    serviceDuration,
-  } = req.body;
+  const { location, services, date, description } = req.body;
 
   if (!location || !services || !date) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -65,6 +54,7 @@ exports.createAppointment = async (req, res) => {
 
   try {
     const servicesData = await Service.find({ _id: { $in: services } });
+
     if (!servicesData || servicesData.length === 0) {
       return res.status(404).json({ message: "No services found" });
     }

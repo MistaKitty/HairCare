@@ -6,30 +6,28 @@ const {
   authorizeRoles,
 } = require("../middleware/authMiddleware");
 
+router.use(authMiddleware);
+
 router.get(
   "/",
-  authMiddleware,
   authorizeRoles("admin", "worker"),
   appointmentController.getAllAppointments
 );
 
 router.post(
   "/",
-  authMiddleware,
   authorizeRoles("admin", "worker", "client"),
   appointmentController.createAppointment
 );
 
 router.put(
   "/:id",
-  authMiddleware,
   authorizeRoles("admin", "worker"),
   appointmentController.updateAppointment
 );
 
 router.delete(
   "/:id",
-  authMiddleware,
   authorizeRoles("admin", "worker"),
   appointmentController.deleteAppointment
 );

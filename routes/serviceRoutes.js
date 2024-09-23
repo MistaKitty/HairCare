@@ -6,25 +6,14 @@ const {
   authorizeRoles,
 } = require("../middleware/authMiddleware");
 
+router.use(authMiddleware);
+
 router.get("/", serviceController.getAllServices);
 
-router.post(
-  "/",
-  authMiddleware,
-  authorizeRoles("admin"),
-  serviceController.createService
-);
-router.put(
-  "/:id",
-  authMiddleware,
-  authorizeRoles("admin"),
-  serviceController.updateService
-);
-router.delete(
-  "/:id",
-  authMiddleware,
-  authorizeRoles("admin"),
-  serviceController.deleteService
-);
+router.post("/", authorizeRoles("admin"), serviceController.createService);
+
+router.put("/:id", authorizeRoles("admin"), serviceController.updateService);
+
+router.delete("/:id", authorizeRoles("admin"), serviceController.deleteService);
 
 module.exports = router;

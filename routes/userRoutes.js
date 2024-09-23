@@ -12,13 +12,16 @@ router.get(
   authorizeRoles("admin", "worker", "client"),
   userController.getAllUsers
 );
+
 router.post("/", userController.createUser);
+
 router.put(
   "/:id",
   authMiddleware,
   authorizeRoles("admin"),
   userController.updateUser
 );
+
 router.delete(
   "/:id",
   authMiddleware,
