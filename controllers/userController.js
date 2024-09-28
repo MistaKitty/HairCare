@@ -18,6 +18,16 @@ exports.createUser = async (req, res) => {
   }
 
   try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const existingPhone = await User.findOne({ phonePrefix, phoneNumber });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
+
     const user = new User({
       name,
       email,
@@ -33,7 +43,12 @@ exports.createUser = async (req, res) => {
 
     res.status(201).json(newUser);
   } catch (err) {
-    res.status(400).json({ message: "Bad Request", error: err.message });
+    if (err.name === "ValidationError") {
+      return res
+        .status(400)
+        .json({ message: "Invalid email or phone number format" });
+    }
+    res.status(500).json({ message: "Server Error", error: err.message });
   }
 };
 

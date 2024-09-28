@@ -44,13 +44,11 @@ exports.verifyToken = (req, res, next) => {
   const token = req.headers["authorization"]?.split(" ")[1];
 
   if (invalidTokens.includes(token)) {
-    console.log("Invalid token attempted:", token);
     return res.status(401).json({ message: "Token is invalid" });
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      console.error("Token verification error:", err);
       return res
         .status(401)
         .json({ message: "Unauthorized - Token expired or invalid" });
