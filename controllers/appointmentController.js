@@ -6,16 +6,34 @@ const dayjs = require("dayjs");
 
 exports.getAllAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find().populate("service");
+    const appointments = await Appointment.find()
+      .populate("user")
+      .populate("appointment.services.serviceId");
+
     const formattedAppointments = appointments.map((appointment) => {
-      const formattedDate = dayjs(appointment.date).format(
-        "D MMMM, YYYY h:mm A"
-      );
       return {
-        ...appointment.toObject(),
-        formattedDate,
+        id: appointment._id,
+        user: {
+          name: appointment.user.name,
+          email: appointment.user.email,
+          phone: appointment.user.formattedPhone,
+        },
+        appointmentDetails: {
+          date: dayjs(appointment.appointment.date).format(
+            "D MMMM, YYYY h:mm A"
+          ),
+          location: appointment.appointment.location,
+          services: appointment.appointment.services.map((service) => ({
+            name: service.serviceName,
+            duration: service.duration,
+            price: service.serviceId.price,
+          })),
+          status: appointment.appointment.status,
+        },
+        billing: appointment.billing,
       };
     });
+
     res.json(formattedAppointments);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
