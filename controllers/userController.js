@@ -18,7 +18,8 @@ exports.createUser = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase();
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
@@ -30,7 +31,7 @@ exports.createUser = async (req, res) => {
 
     const user = new User({
       name,
-      email,
+      email: normalizedEmail,
       phonePrefix,
       phoneNumber,
       password,
@@ -38,9 +39,7 @@ exports.createUser = async (req, res) => {
     });
 
     const newUser = await user.save();
-
-    await sendWelcomeEmail(email, name);
-
+    await sendWelcomeEmail(normalizedEmail, name);
     res.status(201).json(newUser);
   } catch (err) {
     if (err.name === "ValidationError") {
@@ -68,7 +67,9 @@ exports.updateUser = async (req, res) => {
     const user = await User.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
     });
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     res.json(user);
   } catch (err) {
     res.status(400).json({ message: "Bad Request", error: err.message });
@@ -78,7 +79,9 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     res.json({ message: "User deleted" });
   } catch (err) {
     res.status(400).json({ message: "Bad Request" });
