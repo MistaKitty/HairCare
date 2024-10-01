@@ -10,6 +10,7 @@ const serviceSchema = new mongoose.Schema({
     enum: ["Short", "Medium", "Long", "Extra Long"],
     required: true,
   },
+  isActive: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model("Service", serviceSchema);
