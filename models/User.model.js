@@ -48,6 +48,19 @@ const userSchema = new mongoose.Schema({
     default: "client",
   },
   appointments: [{ type: mongoose.Schema.Types.ObjectId, ref: "Appointment" }],
+  cart: [
+    {
+      serviceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Service",
+        required: true,
+      },
+      quantity: {
+        type: Number,
+        default: 1,
+      },
+    },
+  ],
 });
 
 userSchema.pre("save", async function (next) {
