@@ -5,7 +5,6 @@ const Service = require("../models/Service.model");
 exports.getAllServices = async (req, res) => {
   try {
     const services = await Service.find();
-    console.log("Services:", services);
     res.json(services);
   } catch (error) {
     res.status(500).json({ message: "Server Error", error: error.message });
@@ -14,8 +13,6 @@ exports.getAllServices = async (req, res) => {
 
 exports.createService = async (req, res) => {
   const { hairLength, ...serviceData } = req.body;
-
-  console.log("Request Body:", req.body);
 
   if (!["Short", "Medium", "Long", "Extra Long"].includes(hairLength)) {
     return res.status(400).json({
@@ -33,7 +30,6 @@ exports.createService = async (req, res) => {
     await service.save();
     res.status(201).json(service);
   } catch (error) {
-    console.error("Error creating service:", error.message);
     res
       .status(400)
       .json({ message: "Error creating service", error: error.message });
