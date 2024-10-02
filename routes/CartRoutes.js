@@ -5,15 +5,12 @@ const {
   viewCart,
 } = require("../controllers/cartController");
 
-const {
-  authMiddleware,
-  authorizeRoles,
-} = require("../middleware/authMiddleware");
+const { authMiddleware } = require("../middleware/authMiddleware");
+
 const router = express.Router();
 
-const roleGuard = authorizeRoles("admin", "worker", "client");
-router.post("/add", authMiddleware, roleGuard, addToCart);
-router.delete("/remove", authMiddleware, roleGuard, removeFromCart);
-router.get("/", authMiddleware, roleGuard, viewCart);
+router.post("/", authMiddleware, addToCart);
+router.delete("/", authMiddleware, removeFromCart);
+router.get("/", authMiddleware, viewCart);
 
 module.exports = router;
