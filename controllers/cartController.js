@@ -40,6 +40,28 @@ const removeFromCart = async (req, res) => {
   }
 };
 
+const editCart = async (req, res) => {
+  const { serviceId, quantity } = req.body;
+  const userId = req.user._id;
+
+  try {
+    const user = await User.findById(userId);
+    const existingItem = user.cart.find(
+      (item) => item.serviceId.toString() === serviceId
+    );
+
+    if (existingItem) {
+      existingItem.quantity = quantity;
+      await user.save();
+      return res.status(200).json(user.cart);
+    } else {
+      return res.status(404).json({ message: "Item not found in cart." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error editing item in cart", error });
+  }
+};
+
 const viewCart = async (req, res) => {
   const userId = req.user._id;
 
@@ -57,5 +79,6 @@ const viewCart = async (req, res) => {
 module.exports = {
   addToCart,
   removeFromCart,
+  editCart,
   viewCart,
 };
