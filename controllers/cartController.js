@@ -113,6 +113,8 @@ const calculateShippingCost = async (req, res) => {
 
 const getLocationDetailsFromPostalCode = async (req, res) => {
   const { postalCodePrefix, postalCodeSuffix } = req.body;
+  console.log("Recebido:", { postalCodePrefix, postalCodeSuffix }); // Log dos dados recebidos
+
   const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
 
   try {
@@ -120,8 +122,11 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
       `https://www.cttcodigopostal.pt/api/v1/${process.env.POSTAL_CODE_API_KEY}/${postalCode}`
     );
 
+    console.log("Resposta da API dos CTT:", response.data); // Log da resposta da API
+
     const data = response.data[0];
     if (!data) {
+      console.warn("Nenhum resultado válido encontrado para o código postal");
       return res
         .status(400)
         .json({ message: "No valid results found for the postal code" });
@@ -136,8 +141,10 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
       longitude: data.longitude,
     };
 
+    console.log("Detalhes da localização:", locationDetails); // Log dos detalhes da localização
     return res.status(200).json(locationDetails);
   } catch (error) {
+    console.error("Erro ao buscar detalhes da localização:", error); // Log de erro
     return res.status(500).json({ message: "Error fetching location details" });
   }
 };
