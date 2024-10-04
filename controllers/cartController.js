@@ -128,9 +128,11 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
     }
 
     const locationDetails = {
-      concelho: data.concelho,
+      morada: data.morada, // Adicionado morada
+      localidade: data.localidade,
       freguesia: data.freguesia,
-      infoLocal: data.info_local, // Alterado para incluir apenas o info_local
+      concelho: data.concelho,
+      infoLocal: data.info_local,
     };
 
     return res.status(200).json(locationDetails);
