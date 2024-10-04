@@ -5,8 +5,7 @@ const {
   viewCart,
   editCart,
   calculateShippingCost,
-  getLocationDetailsFromPostalCode,
-  calculateTravelCost,
+  getLocationAndFee,
 } = require("../controllers/cartController");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
@@ -17,7 +16,6 @@ router.delete("/", authMiddleware, removeFromCart);
 router.get("/", authMiddleware, viewCart);
 router.put("/edit", authMiddleware, editCart);
 router.post("/shipping", authMiddleware, calculateShippingCost);
-router.post("/localidade", authMiddleware, getLocationDetailsFromPostalCode);
-router.post("/calculateTravelCost", calculateTravelCost);
+router.post("/localidade", authMiddleware, getLocationAndFee);
 
 module.exports = router;

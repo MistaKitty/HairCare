@@ -111,88 +111,78 @@ const calculateShippingCost = async (req, res) => {
   }
 };
 
-const getLocationDetailsFromPostalCode = async (req, res) => {
+const getLocationAndFee = async (req, res) => {
   const { postalCodePrefix, postalCodeSuffix } = req.body;
-  console.log("Recebido:", { postalCodePrefix, postalCodeSuffix }); // Log dos dados recebidos
+
+  if (!postalCodePrefix || !postalCodeSuffix) {
+    return res.status(400).json({ message: "Missing postal code information" });
+  }
+
+  const postalCodePrefixRegex = /^[0-9]{4}$/;
+  const postalCodeSuffixRegex = /^[0-9]{3}$/;
+
+  if (
+    !postalCodePrefixRegex.test(postalCodePrefix) ||
+    !postalCodeSuffixRegex.test(postalCodeSuffix)
+  ) {
+    return res.status(400).json({
+      message:
+        "Invalid postal code format. Expected format is 0000 for prefix and 000 for suffix",
+    });
+  }
 
   const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
 
   try {
     const response = await axios.get(
-      `https://www.cttcodigopostal.pt/api/v1/${process.env.POSTAL_CODE_API_KEY}/${postalCode}`
+      `https://www.cttcodigopostal.pt/api/v1/${POSTAL_CODE_API_KEY}/${postalCode}`
     );
-
-    console.log("Resposta da API dos CTT:", response.data); // Log da resposta da API
-
     const data = response.data[0];
+
     if (!data) {
-      console.warn("Nenhum resultado válido encontrado para o código postal");
       return res
         .status(400)
         .json({ message: "No valid results found for the postal code" });
     }
 
-    const locationDetails = {
-      morada: data.morada,
-      localidade: data.localidade,
-      freguesia: data.freguesia,
-      concelho: data.concelho,
-      latitude: data.latitude,
-      longitude: data.longitude,
+    const coordinates = {
+      latitude: parseFloat(data.latitude),
+      longitude: parseFloat(data.longitude),
     };
 
-    console.log("Detalhes da localização:", locationDetails); // Log dos detalhes da localização
-    return res.status(200).json(locationDetails);
-  } catch (error) {
-    console.error("Erro ao buscar detalhes da localização:", error); // Log de erro
-    return res.status(500).json({ message: "Error fetching location details" });
-  }
-};
+    const startCoordinates = `${START_LATITUDE},${START_LONGITUDE}`;
+    const endCoordinates = `${coordinates.latitude},${coordinates.longitude}`;
 
-const calculateTravelCost = async () => {
-  const total = parseFloat(calculateTotal());
-  console.log("Total calculado:", total); // Log do total calculado
+    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${GOOGLE_MAPS_API_KEY}`;
 
-  const locationData = await fetchLocalidade(prefix, suffix);
-  console.log("Dados de localização obtidos:", locationData); // Log dos dados de localização
+    const googleResponse = await axios.get(googleMapsApiUrl);
+    const distanceData = googleResponse.data.rows[0].elements[0];
 
-  if (locationData) {
-    const { latitude, longitude } = locationData;
-    if (latitude && longitude) {
-      console.log("Latitude e longitude obtidas:", { latitude, longitude });
-
-      // Envio dos dados para o backend
-      const response = await fetch("/api/calculate-travel-cost", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          latitude,
-          longitude,
-          total,
-          prefix,
-          suffix,
-        }),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        console.log("Resposta da API do backend:", data); // Log da resposta do backend
-        setTravelCost(data.cost); // Ajuste conforme necessário
-        setShowDetails(true);
-      } else {
-        console.error("Erro na resposta da API:", data.message); // Log de erro
-      }
-    } else {
-      console.error("Latitude e longitude não estão disponíveis.");
+    if (!distanceData || distanceData.status !== "OK") {
+      throw new Error("Failed to get distance data");
     }
-  } else {
-    console.error("Dados da localização não foram recebidos.");
+
+    const distance = (distanceData.distance.value / 1000).toFixed(2);
+    const feeCalculated = (distance * PRICE_PER_KM + BASE_FEE).toFixed(2);
+
+    res.json({
+      location: {
+        street: data.morada,
+        locality: data.localidade,
+        parish: data.freguesia,
+        county: data.concelho,
+        coordinates,
+      },
+      fee: `€${feeCalculated}`,
+      distance: `${distance} km`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error retrieving location and fee",
+      error: error.message,
+    });
   }
 };
-
-module.exports = { getLocationDetailsFromPostalCode };
 
 module.exports = {
   addToCart,
@@ -200,6 +190,5 @@ module.exports = {
   editCart,
   viewCart,
   calculateShippingCost,
-  getLocationDetailsFromPostalCode,
-  calculateTravelCost,
+  getLocationAndFee,
 };
