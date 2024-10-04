@@ -149,46 +149,46 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
   }
 };
 
-const calculateTravelCost = async (req, res) => {
-  const { latitude, longitude, total, prefix, suffix } = req.body;
+const calculateTravelCost = async () => {
+  const total = parseFloat(calculateTotal());
+  console.log("Total calculado:", total); // Log do total calculado
 
-  console.log("Recebido:", { latitude, longitude, total, prefix, suffix }); // Log dos dados recebidos
+  const locationData = await fetchLocalidade(prefix, suffix);
+  console.log("Dados de localização obtidos:", locationData); // Log dos dados de localização
 
-  try {
-    const startCoordinates = `${START_LATITUDE},${START_LONGITUDE}`;
-    const endCoordinates = `${latitude},${longitude}`;
-    const mapsApiKey = GOOGLE_MAPS_API_KEY;
+  if (locationData) {
+    const { latitude, longitude } = locationData;
+    if (latitude && longitude) {
+      console.log("Latitude e longitude obtidas:", { latitude, longitude });
 
-    console.log("Coordenadas Iniciais e Finais:", {
-      startCoordinates,
-      endCoordinates,
-    }); // Log das coordenadas
+      // Envio dos dados para o backend
+      const response = await fetch("/api/calculate-travel-cost", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          latitude,
+          longitude,
+          total,
+          prefix,
+          suffix,
+        }),
+      });
 
-    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
-    const googleResponse = await axios.get(googleMapsApiUrl);
-
-    console.log("Resposta da API do Google Maps:", googleResponse.data); // Log da resposta da API do Google Maps
-
-    const distanceData = googleResponse.data.rows[0].elements[0];
-
-    if (!distanceData || distanceData.status !== "OK") {
-      throw new Error("Failed to get distance data");
+      const data = await response.json();
+      if (response.ok) {
+        console.log("Resposta da API do backend:", data); // Log da resposta do backend
+        setTravelCost(data.cost); // Ajuste conforme necessário
+        setShowDetails(true);
+      } else {
+        console.error("Erro na resposta da API:", data.message); // Log de erro
+      }
+    } else {
+      console.error("Latitude e longitude não estão disponíveis.");
     }
-
-    const distance = (distanceData.distance.value / 1000).toFixed(2);
-    const feeCalculated = (distance * PRICE_PER_KM + BASE_FEE).toFixed(2);
-
-    // Calcula a taxa com base no total, prefix e suffix
-    const tax =
-      (parseFloat(total) + parseFloat(prefix) + parseFloat(suffix)) * 0.1;
-
-    console.log("Custo de Deslocação:", feeCalculated); // Log do custo de deslocação
-    console.log("Taxa Calculada:", tax.toFixed(2)); // Log da taxa calculada
-
-    res.status(200).json({ cost: feeCalculated, tax: tax.toFixed(2) });
-  } catch (error) {
-    console.error("Erro ao calcular o custo de deslocação:", error); // Log de erro
-    res.status(500).json({ message: "Error calculating travel cost", error });
+  } else {
+    console.error("Dados da localização não foram recebidos.");
   }
 };
 
