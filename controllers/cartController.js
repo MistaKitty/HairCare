@@ -111,34 +111,6 @@ const calculateShippingCost = async (req, res) => {
   }
 };
 
-const calculateTravelCost = async (req, res) => {
-  const { latitude, longitude } = req.body;
-
-  try {
-    const startCoordinates = `${process.env.START_LATITUDE},${process.env.START_LONGITUDE}`;
-    const endCoordinates = `${latitude},${longitude}`;
-    const mapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
-
-    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
-
-    const googleResponse = await axios.get(googleMapsApiUrl);
-    const distanceData = googleResponse.data.rows[0].elements[0];
-
-    if (!distanceData || distanceData.status !== "OK") {
-      throw new Error("Failed to get distance data");
-    }
-
-    const distance = (distanceData.distance.value / 1000).toFixed(2);
-    const pricePerKm = parseFloat(process.env.PRICE_PER_KM);
-    const baseFee = parseFloat(process.env.BASE_FEE);
-    const feeCalculated = (distance * pricePerKm + baseFee).toFixed(2);
-
-    res.status(200).json({ cost: feeCalculated });
-  } catch (error) {
-    res.status(500).json({ message: "Error calculating travel cost", error });
-  }
-};
-
 const getLocationDetailsFromPostalCode = async (req, res) => {
   const { postalCodePrefix, postalCodeSuffix } = req.body;
   const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
