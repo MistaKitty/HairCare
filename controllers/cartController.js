@@ -1,12 +1,12 @@
 const User = require("../models/User.model");
 const axios = require("axios");
 
-const PRICE_PER_KM = 1.5;
-const BASE_FEE = 2.5;
-const START_LATITUDE = 38.7127235;
-const START_LONGITUDE = -9.4157982;
 const POSTAL_CODE_API_KEY = process.env.POSTAL_CODE_API_KEY;
 const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+const PRICE_PER_KM = parseFloat(process.env.PRICE_PER_KM);
+const BASE_FEE = parseFloat(process.env.BASE_FEE);
+const START_LATITUDE = parseFloat(process.env.START_LATITUDE);
+const START_LONGITUDE = parseFloat(process.env.START_LONGITUDE);
 
 const addToCart = async (req, res) => {
   const { serviceId, quantity } = req.body;
@@ -131,9 +131,7 @@ const calculateTravelCost = async (data) => {
   }
 
   const distance = (distanceData.distance.value / 1000).toFixed(2);
-  const pricePerKm = parseFloat(process.env.PRICE_PER_KM);
-  const baseFee = parseFloat(process.env.BASE_FEE);
-  const feeCalculated = (distance * pricePerKm + baseFee).toFixed(2);
+  const feeCalculated = (distance * PRICE_PER_KM + BASE_FEE).toFixed(2);
 
   return feeCalculated;
 };
