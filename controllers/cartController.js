@@ -111,8 +111,6 @@ const calculateShippingCost = async (req, res) => {
   }
 };
 
-
-
 const getLocationDetailsFromPostalCode = async (req, res) => {
   const { postalCodePrefix, postalCodeSuffix } = req.body;
   const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
@@ -124,7 +122,9 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
 
     const data = response.data[0];
     if (!data) {
-      return res.status(400).json({ message: "No valid results found for the postal code" });
+      return res
+        .status(400)
+        .json({ message: "No valid results found for the postal code" });
     }
 
     const locationDetails = {
@@ -140,17 +140,6 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
 };
 
 module.exports = { getLocationDetailsFromPostalCode };
-
-
-
-    res.status(200).json(locationDetails);
-  } catch (error) {
-    console.error("Erro ao obter dados do código postal:", error);
-    res
-      .status(500)
-      .json({ message: "Erro ao obter informações do código postal", error });
-  }
-};
 
 module.exports = {
   addToCart,
