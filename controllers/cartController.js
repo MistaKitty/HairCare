@@ -176,4 +176,5 @@ module.exports = {
   viewCart,
   calculateShippingCost,
   getLocationDetailsFromPostalCode,
+  calculateTravelCost,
 };
