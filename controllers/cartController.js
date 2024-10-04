@@ -146,9 +146,9 @@ const calculateTravelCost = async (req, res) => {
   const { latitude, longitude } = req.body;
 
   try {
-    const startCoordinates = `${process.env.START_LATITUDE},${process.env.START_LONGITUDE}`;
+    const startCoordinates = `${START_LATITUDE},${START_LONGITUDE}`;
     const endCoordinates = `${latitude},${longitude}`;
-    const mapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const mapsApiKey = GOOGLE_MAPS_API_KEY;
 
     const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
 
@@ -160,9 +160,7 @@ const calculateTravelCost = async (req, res) => {
     }
 
     const distance = (distanceData.distance.value / 1000).toFixed(2);
-    const pricePerKm = parseFloat(process.env.PRICE_PER_KM);
-    const baseFee = parseFloat(process.env.BASE_FEE);
-    const feeCalculated = (distance * pricePerKm + baseFee).toFixed(2);
+    const feeCalculated = (distance * PRICE_PER_KM + BASE_FEE).toFixed(2);
 
     res.status(200).json({ cost: feeCalculated });
   } catch (error) {
