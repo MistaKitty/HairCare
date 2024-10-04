@@ -1,4 +1,12 @@
 const User = require("../models/User.model");
+const axios = require("axios");
+
+const PRICE_PER_KM = 1.5;
+const BASE_FEE = 2.5;
+const START_LATITUDE = 38.7127235;
+const START_LONGITUDE = -9.4157982;
+const POSTAL_CODE_API_KEY = process.env.POSTAL_CODE_API_KEY;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 const addToCart = async (req, res) => {
   const { serviceId, quantity } = req.body;
@@ -76,9 +84,79 @@ const viewCart = async (req, res) => {
   }
 };
 
+const calculateShippingCost = async (req, res) => {
+  const { weight, address } = req.body;
+
+  try {
+    const response = await axios.post(
+      "API_URL_DOS_CTT",
+      {
+        weight,
+        address,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.CTT_API_KEY}`,
+        },
+      }
+    );
+
+    res.status(200).json(response.data);
+  } catch (error) {
+    console.error("Erro ao chamar a API dos CTT:", error);
+    res
+      .status(500)
+      .json({ message: "Erro ao calcular o custo de envio", error });
+  }
+};
+
+
+
+const getLocationDetailsFromPostalCode = async (req, res) => {
+  const { postalCodePrefix, postalCodeSuffix } = req.body;
+  const postalCode = `${postalCodePrefix}-${postalCodeSuffix}`;
+
+  try {
+    const response = await axios.get(
+      `https://www.cttcodigopostal.pt/api/v1/${POSTAL_CODE_API_KEY}/${postalCode}`
+    );
+
+    const data = response.data[0];
+    if (!data) {
+      return res.status(400).json({ message: "No valid results found for the postal code" });
+    }
+
+    const locationDetails = {
+      local: data.local,
+      concelho: data.concelho,
+      distrito: data.distrito,
+    };
+
+    return res.status(200).json(locationDetails);
+  } catch (error) {
+    return res.status(500).json({ message: "Error fetching location details" });
+  }
+};
+
+module.exports = { getLocationDetailsFromPostalCode };
+
+
+
+    res.status(200).json(locationDetails);
+  } catch (error) {
+    console.error("Erro ao obter dados do código postal:", error);
+    res
+      .status(500)
+      .json({ message: "Erro ao obter informações do código postal", error });
+  }
+};
+
 module.exports = {
   addToCart,
   removeFromCart,
   editCart,
   viewCart,
+  calculateShippingCost,
+  getLocationDetailsFromPostalCode,
 };
