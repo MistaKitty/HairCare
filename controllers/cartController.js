@@ -156,7 +156,7 @@ const calculateTravelCost = async (req, res) => {
     const distanceData = googleResponse.data.rows[0].elements[0];
 
     if (!distanceData || distanceData.status !== "OK") {
-      throw new Error("Failed to get distance data");
+      return res.status(400).json({ message: "Failed to get distance data" });
     }
 
     const distance = (distanceData.distance.value / 1000).toFixed(2);
@@ -164,6 +164,7 @@ const calculateTravelCost = async (req, res) => {
 
     res.status(200).json({ cost: feeCalculated });
   } catch (error) {
+    console.error("Error calculating travel cost:", error); // Registar erro para facilitar depuração
     res.status(500).json({ message: "Error calculating travel cost", error });
   }
 };

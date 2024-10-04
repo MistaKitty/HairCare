@@ -18,6 +18,6 @@ router.get("/", authMiddleware, viewCart);
 router.put("/edit", authMiddleware, editCart);
 router.post("/shipping", authMiddleware, calculateShippingCost);
 router.post("/localidade", authMiddleware, getLocationDetailsFromPostalCode);
-router.post("/travel-cost", authMiddleware, calculateTravelCost);
+router.post("/calculateTravelCost", calculateTravelCost);
 
 module.exports = router;
