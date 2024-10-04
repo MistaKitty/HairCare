@@ -150,28 +150,44 @@ const getLocationDetailsFromPostalCode = async (req, res) => {
 };
 
 const calculateTravelCost = async (req, res) => {
-  const { latitude, longitude } = req.body;
+  const { latitude, longitude, total, prefix, suffix } = req.body;
+
+  console.log("Recebido:", { latitude, longitude, total, prefix, suffix }); // Log dos dados recebidos
 
   try {
     const startCoordinates = `${START_LATITUDE},${START_LONGITUDE}`;
     const endCoordinates = `${latitude},${longitude}`;
     const mapsApiKey = GOOGLE_MAPS_API_KEY;
 
-    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
+    console.log("Coordenadas Iniciais e Finais:", {
+      startCoordinates,
+      endCoordinates,
+    }); // Log das coordenadas
 
+    const googleMapsApiUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${startCoordinates}&destinations=${endCoordinates}&key=${mapsApiKey}`;
     const googleResponse = await axios.get(googleMapsApiUrl);
+
+    console.log("Resposta da API do Google Maps:", googleResponse.data); // Log da resposta da API do Google Maps
+
     const distanceData = googleResponse.data.rows[0].elements[0];
 
     if (!distanceData || distanceData.status !== "OK") {
-      return res.status(400).json({ message: "Failed to get distance data" });
+      throw new Error("Failed to get distance data");
     }
 
     const distance = (distanceData.distance.value / 1000).toFixed(2);
     const feeCalculated = (distance * PRICE_PER_KM + BASE_FEE).toFixed(2);
 
-    res.status(200).json({ cost: feeCalculated });
+    // Calcula a taxa com base no total, prefix e suffix
+    const tax =
+      (parseFloat(total) + parseFloat(prefix) + parseFloat(suffix)) * 0.1;
+
+    console.log("Custo de Deslocação:", feeCalculated); // Log do custo de deslocação
+    console.log("Taxa Calculada:", tax.toFixed(2)); // Log da taxa calculada
+
+    res.status(200).json({ cost: feeCalculated, tax: tax.toFixed(2) });
   } catch (error) {
-    console.error("Error calculating travel cost:", error); // Registar erro para facilitar depuração
+    console.error("Erro ao calcular o custo de deslocação:", error); // Log de erro
     res.status(500).json({ message: "Error calculating travel cost", error });
   }
 };
