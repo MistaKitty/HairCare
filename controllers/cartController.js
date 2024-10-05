@@ -33,18 +33,26 @@ const addToCart = async (req, res) => {
 
 const removeFromCart = async (req, res) => {
   const { serviceId } = req.body;
-  const userId = req.user._id;
+  const userId = req.user._id; // Obtém o ID do utilizador autenticado
 
   try {
     const user = await User.findById(userId);
-    user.cart = user.cart.filter(
-      (item) => item.serviceId.toString() !== serviceId
-    );
+
+    if (serviceId) {
+      user.cart = user.cart.filter(
+        (item) => item.serviceId.toString() !== serviceId
+      );
+    } else {
+      user.cart = [];
+    }
 
     await user.save();
+
     res.status(200).json(user.cart);
   } catch (error) {
-    res.status(500).json({ message: "Error removing item from cart", error });
+    res
+      .status(500)
+      .json({ message: "Error removing item(s) from cart", error });
   }
 };
 
